@@ -21,4 +21,4 @@ To add proper HTTP/1.1 keep-alive behavior to our implementation based on the ht
 
 With this implementation, we have completed a multi-threaded, file-based web server with thread-pooling implemented in Java, with proper HTTP/1.1 keep-alive behavior based on the request headers. This implementation should be able to handle a high volume of incoming requests and provide a scalable solution for serving web content. However, as with any production-ready system, it's important to thoroughly test and validate the implementation before deploying it to a production environment.\
 
-<p align="center"><img src="https://i.ibb.co/1QNXc6B/BENCH-10-100.png" width="600" height="300"  /></p>
+<p align="center"><img src="https://i.ibb.co/1QNXc6B/BENCH-10-100.png"/></p>
