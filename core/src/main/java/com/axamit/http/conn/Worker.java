@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.MalformedInputException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +31,9 @@ public class Worker implements Runnable {
 
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              BufferedOutputStream out = new BufferedOutputStream(clientSocket.getOutputStream())) {
+
+            // Set socket timeout to prevent resource leaks.
+            clientSocket.setSoTimeout(SOCKET_TIMEOUT);
 
             // enable HTTP/1.1 keep-alive behavior
             boolean keepAlive;
@@ -63,6 +67,8 @@ public class Worker implements Runnable {
                 }
                 out.flush();
             } while (keepAlive);
+        } catch (SocketTimeoutException e) {
+            LOGGER.log(Level.WARNING, "Connection timed out: {0}", e.getLocalizedMessage());
         } catch (MalformedInputException e) {
             LOGGER.log(Level.WARNING,() -> "Invalid characters in file: " + e.getMessage());
         } catch (UnsupportedEncodingException e) {

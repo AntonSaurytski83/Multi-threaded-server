@@ -2,10 +2,9 @@ package com.axamit.http;
 
 import com.axamit.http.conn.Worker;
 
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -33,7 +32,7 @@ public class Server {
      * The singleton instance of the server.
      */
     private static Server server = null;
-    private SSLServerSocket serverSocket = null;
+    private ServerSocket serverSocket = null;
     private volatile boolean isRunning = false;
 
     public Server() {
@@ -54,25 +53,21 @@ public class Server {
 
         ThreadPoolExecutor executorService = (ThreadPoolExecutor)Executors.newFixedThreadPool(NUM_THREADS);
         LOGGER.log(Level.INFO, () -> "Number threads " + NUM_THREADS);
-        try {
-            SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            server.serverSocket = (SSLServerSocket) factory.createServerSocket(SERVER_PORT);
-
-            // Set up the SSL context to require client authentication.
-            server.serverSocket.setNeedClientAuth(true);
+        try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)) {
+            server.serverSocket = serverSocket;
+            server.serverSocket.setSoTimeout(SOCKET_TIMEOUT); // Set timeout to 5 second
 
             LOGGER.log(Level.INFO, () -> "Web server started on port : " + SERVER_PORT);
             while (server.isRunning) {
                 try {
-                    SSLSocket clientSocket = (SSLSocket) server.serverSocket.accept();
-                    // Set socket timeout to prevent resource leaks.
-                    clientSocket.setSoTimeout(SOCKET_TIMEOUT);
+                    Socket clientSocket = server.serverSocket.accept();
                     LOGGER.log(Level.INFO, "Accepted connection from {0}", clientSocket.getInetAddress().getHostAddress());
                     // Submit new task to thread pool
                     executorService.submit(() -> {
                         new Worker(clientSocket).run();
                         LOGGER.log(Level.INFO, "Completed task, active threads: {0}, completed tasks: {1}", new Object[] { executorService.getActiveCount(), executorService.getCompletedTaskCount() });
                     });
+                    LOGGER.log(Level.INFO, () -> "Pool " + executorService.getLargestPoolSize());
                 } catch (SocketTimeoutException e) {
                     // Timeout occurred, check if server should stop
                     if (!server.isRunning) {
