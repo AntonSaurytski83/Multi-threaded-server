@@ -1,3 +1,5 @@
+Multi-core multi-threaded web server with thread-pooling
+
 Task: A multi-threaded (e.g. file-based) web server with thread-pooling implemented in Java.
 
 Solution: We can implement a web server in Java using the following approach:
